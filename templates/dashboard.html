@@ -1,0 +1,10 @@
+<h2>Your Sites</h2>
+<ul>
+{% for site in sites %}
+  <li><a href="http://{{ site[0] }}.sriox.com" target="_blank">{{ site[0] }}.sriox.com</a>
+    [<a href="/manage/{{ site[0] }}">Manage</a>]
+  </li>
+{% endfor %}
+</ul>
+<p><a href="/create-site">Create New Site</a></p>
+<p><a href="/logout">Logout</a></p>

@@ -1,0 +1,11 @@
+<h2>Manage {{ subdomain }}.sriox.com</h2>
+<ul>
+{% for file in files %}
+  <li>{{ file }}
+    [<a href="/manage/{{ subdomain }}/edit/{{ file }}">Edit</a>] 
+    [<a href="/manage/{{ subdomain }}/delete/{{ file }}">Delete</a>]
+  </li>
+{% endfor %}
+</ul>
+<p><a href="/manage/{{ subdomain }}/upload">Upload More Files</a></p>
+<p><a href="/dashboard">Back to Dashboard</a></p>

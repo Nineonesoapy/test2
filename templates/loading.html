@@ -1,6 +1,231 @@
-<h2>Creating your site...</h2>
-<p>This might take a few seconds while we set up DNS and SSL.</p>
-<p><strong>{{ subdomain }}.sriox.com</strong></p>
-<p>You can refresh in a few seconds or check your site directly:</p>
-<p><a href="http://{{ subdomain }}.sriox.com" target="_blank">Visit Site</a></p>
-<p><a href="/dashboard">Back to Dashboard</a></p>
+{% extends "base.html" %}
+
+{% block title %}Creating Site - Sriox Hosting{% endblock %}
+
+{% block content %}
+<style>
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        text-align: center;
+    }
+
+    .loading-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        padding: 3rem;
+        max-width: 500px;
+        width: 100%;
+    }
+
+    .loading-icon {
+        font-size: 4rem;
+        margin-bottom: 2rem;
+        animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(-20px);
+        }
+        60% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .loading-title {
+        font-size: 2rem;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+
+    .loading-subtitle {
+        color: #6b7280;
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+
+    .site-url {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        display: inline-block;
+    }
+
+    .progress-steps {
+        text-align: left;
+        margin: 2rem 0;
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .step-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .step-complete {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+    }
+
+    .step-complete .step-icon {
+        background: #22c55e;
+        color: white;
+    }
+
+    .step-active {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+    }
+
+    .step-active .step-icon {
+        background: #3b82f6;
+        color: white;
+        animation: pulse 2s infinite;
+    }
+
+    .step-pending {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+    }
+
+    .step-pending .step-icon {
+        background: #e5e7eb;
+        color: #9ca3af;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .loading-actions {
+        margin-top: 2rem;
+    }
+</style>
+
+<div class="loading-container fade-in">
+    <div class="loading-card">
+        <div class="loading-icon">🚀</div>
+        <h1 class="loading-title">Creating Your Website</h1>
+        <p class="loading-subtitle">Setting up DNS, SSL certificates, and server configuration</p>
+        
+        <div class="site-url">
+            🌐 {{ subdomain }}.sriox.com
+        </div>
+
+        <div class="progress-steps">
+            <div class="step step-complete" id="step1">
+                <div class="step-icon">✅</div>
+                <div>
+                    <div style="font-weight: 600; color: #374151;">File Upload</div>
+                    <div style="color: #6b7280; font-size: 0.875rem;">HTML file uploaded successfully</div>
+                </div>
+            </div>
+
+            <div class="step step-active" id="step2">
+                <div class="step-icon">🌐</div>
+                <div>
+                    <div style="font-weight: 600; color: #374151;">DNS Configuration</div>
+                    <div style="color: #6b7280; font-size: 0.875rem;">Setting up domain routing</div>
+                </div>
+            </div>
+
+            <div class="step step-pending" id="step3">
+                <div class="step-icon">🔒</div>
+                <div>
+                    <div style="font-weight: 600; color: #374151;">SSL Certificate</div>
+                    <div style="color: #6b7280; font-size: 0.875rem;">Securing your website</div>
+                </div>
+            </div>
+
+            <div class="step step-pending" id="step4">
+                <div class="step-icon">⚡</div>
+                <div>
+                    <div style="font-weight: 600; color: #374151;">Server Setup</div>
+                    <div style="color: #6b7280; font-size: 0.875rem;">Final configuration</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading-actions">
+            <p style="color: #6b7280; margin-bottom: 1rem;">This usually takes 30-60 seconds...</p>
+            <a href="http://{{ subdomain }}.sriox.com" target="_blank" class="btn btn-primary" style="margin-right: 1rem;">
+                🔗 Visit Site
+            </a>
+            <a href="/dashboard" class="btn btn-secondary">
+                📊 Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simulate progress steps
+    let currentStep = 2;
+    
+    function updateStep(stepNum, status) {
+        const step = document.getElementById('step' + stepNum);
+        step.className = 'step step-' + status;
+        
+        if (status === 'complete') {
+            step.querySelector('.step-icon').textContent = '✅';
+        }
+    }
+
+    // Simulate the setup process
+    setTimeout(() => {
+        updateStep(2, 'complete');
+        updateStep(3, 'active');
+    }, 2000);
+
+    setTimeout(() => {
+        updateStep(3, 'complete');
+        updateStep(4, 'active');
+    }, 4000);
+
+    setTimeout(() => {
+        updateStep(4, 'complete');
+        // Auto-redirect to dashboard after completion
+        setTimeout(() => {
+            window.location.href = '/dashboard';
+        }, 2000);
+    }, 6000);
+
+    // Auto-refresh to check if site is ready
+    setTimeout(() => {
+        window.location.reload();
+    }, 10000);
+</script>
+{% endblock %}

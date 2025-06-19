@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Site - Sriox Hosting{% endblock %}
+
+{% block content %}
+<style>
+    .create-container {
+        max-width: 600px;
+        margin: 2rem auto;
+    }
+
+    .create-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .create-header h1 {
+        font-size: 2.5rem;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .create-header p {
+        color: #6b7280;
+        font-size: 1.1rem;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+    }
+
+    .subdomain-preview {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+        text-align: center;
+        font-weight: 600;
+        color: #0369a1;
+    }
+
+    .file-upload-area {
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .file-upload-area:hover {
+        border-color: #3b82f6;
+        background: #f8fafc;
+    }
+
+    .file-upload-area.dragover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+        transform: scale(1.02);
+    }
+
+    .file-upload-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #9ca3af;
+    }
+
+    .file-selected {
+        background: #f0fdf4;
+        border-color: #22c55e;
+    }
+
+    .file-selected .file-upload-icon {
+        color: #22c55e;
+    }
+
+    .file-info {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        display: none;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+</style>
+
+<div class="create-container fade-in">
+    <div class="create-header">
+        <h1>🚀 Create New Website</h1>
+        <p>Choose a subdomain and upload your HTML file to get started</p>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data" id="createForm">
+            <div class="form-group">
+                <label for="subdomain" class="form-label">🌐 Choose Your Subdomain</label>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="text" id="subdomain" name="subdomain" class="form-input" 
+                           placeholder="mysite" required pattern="[a-z0-9-]+" 
+                           style="flex: 1;" maxlength="20">
+                    <span style="color: #6b7280; font-weight: 600;">.sriox.com</span>
+                </div>
+                <div class="subdomain-preview" id="subdomainPreview" style="display: none;">
+                    Your site will be available at: <strong id="previewUrl"></strong>
+                </div>
+                <small style="color: #6b7280;">Only lowercase letters, numbers, and hyphens allowed</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">📄 Upload HTML File</label>
+                <div class="file-upload-area" id="fileUploadArea">
+                    <div class="file-upload-icon" id="uploadIcon">📁</div>
+                    <h3 style="margin-bottom: 0.5rem; color: #374151;" id="uploadTitle">Drop your HTML file here</h3>
+                    <p style="color: #6b7280; margin-bottom: 1rem;" id="uploadDesc">or click to browse your files</p>
+                    <input type="file" name="file" accept=".html" required style="display: none;" id="fileInput">
+                    <div class="btn btn-secondary" style="display: inline-flex;">
+                        📂 Choose File
+                    </div>
+                </div>
+                
+                <div class="file-info" id="fileInfo">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; color: #374151;" id="fileName"></div>
+                            <div style="color: #6b7280; font-size: 0.875rem;" id="fileSize"></div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="removeFile()" style="padding: 0.5rem;">
+                            ❌
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 1rem;" id="submitBtn">
+                🌟 Create Website
+            </button>
+            
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </form>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="/dashboard" class="btn btn-secondary">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const subdomainInput = document.getElementById('subdomain');
+    const subdomainPreview = document.getElementById('subdomainPreview');
+    const previewUrl = document.getElementById('previewUrl');
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const createForm = document.getElementById('createForm');
+
+    // Subdomain preview
+    subdomainInput.addEventListener('input', function() {
+        let value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        this.value = value;
+        
+        if (value) {
+            previewUrl.textContent = value + '.sriox.com';
+            subdomainPreview.style.display = 'block';
+        } else {
+            subdomainPreview.style.display = 'none';
+        }
+    });
+
+    // File upload handling
+    fileUploadArea.addEventListener('click', () => fileInput.click());
+
+    fileUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.add('dragover');
+    });
+
+    fileUploadArea.addEventListener('dragleave', () => {
+        fileUploadArea.classList.remove('dragover');
+    });
+
+    fileUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].name.endsWith('.html')) {
+            handleFileSelect(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    function handleFileSelect(file) {
+        document.getElementById('uploadIcon').textContent = '✅';
+        document.getElementById('uploadTitle').textContent = 'File Selected!';
+        document.getElementById('uploadDesc').textContent = file.name;
+        fileUploadArea.classList.add('file-selected');
+        
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+        fileInfo.style.display = 'block';
+    }
+
+    function removeFile() {
+        fileInput.value = '';
+        document.getElementById('uploadIcon').textContent = '📁';
+        document.getElementById('uploadTitle').textContent = 'Drop your HTML file here';
+        document.getElementById('uploadDesc').textContent = 'or click to browse your files';
+        fileUploadArea.classList.remove('file-selected');
+        fileInfo.style.display = 'none';
+    }
+
+    // Form submission with progress
+    createForm.addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        
+        submitBtn.innerHTML = '🚀 Creating Website...';
+        submitBtn.disabled = true;
+        progressBar.style.display = 'block';
+        
+        // Simulate progress
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+            progressFill.style.width = progress + '%';
+        }, 200);
+        
+        // Clean up interval after form submission
+        setTimeout(() => {
+            clearInterval(interval);
+            progressFill.style.width = '100%';
+        }, 2000);
+    });
+</script>
+{% endblock %}

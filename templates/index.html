@@ -1,2 +1,179 @@
-<h2>Welcome to Sriox Hosting</h2>
-<p><a href="/register">Register</a> | <a href="/login">Login</a></p>
+{% extends "base.html" %}
+
+{% block title %}Sriox Hosting - Simple Web Hosting Platform{% endblock %}
+
+{% block content %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 4rem 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 20px;
+        margin: 2rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="1" fill="white" opacity="0.1"/><circle cx="10" cy="90" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero h1 {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        background: linear-gradient(45deg, #ffffff, #e0e7ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+
+    .feature {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .feature:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .cta-section {
+        text-align: center;
+        padding: 3rem 0;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 16px;
+        margin: 3rem 0;
+    }
+
+    @media (max-width: 768px) {
+        .hero h1 {
+            font-size: 2.5rem;
+        }
+        .hero p {
+            font-size: 1.1rem;
+        }
+    }
+</style>
+
+<div class="fade-in">
+    <div class="hero">
+        <div class="hero-content">
+            <h1>🌐 Sriox Hosting</h1>
+            <p>Create beautiful websites with custom subdomains, automatic SSL certificates, and lightning-fast hosting. Get started in seconds, not hours.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="/register" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                    🚀 Get Started Free
+                </a>
+                <a href="/login" class="btn btn-secondary" style="font-size: 1.1rem; padding: 1rem 2rem; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                    🔑 Sign In
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <div class="feature-icon">⚡</div>
+            <h3 style="margin-bottom: 1rem; color: #1f2937;">Lightning Fast</h3>
+            <p style="color: #6b7280;">Deploy your websites instantly with our optimized infrastructure. Your sites load in milliseconds, not seconds.</p>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">🔒</div>
+            <h3 style="margin-bottom: 1rem; color: #1f2937;">Secure by Default</h3>
+            <p style="color: #6b7280;">Automatic SSL certificates, DDoS protection, and secure file management. Your websites are protected from day one.</p>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">🎨</div>
+            <h3 style="margin-bottom: 1rem; color: #1f2937;">Easy Management</h3>
+            <p style="color: #6b7280;">Upload, edit, and manage your files with our intuitive interface. No command line required.</p>
+        </div>
+    </div>
+
+    <div class="cta-section">
+        <h2 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1f2937;">Ready to Get Started?</h2>
+        <p style="font-size: 1.2rem; margin-bottom: 2rem; color: #6b7280;">Join thousands of developers who trust Sriox for their web hosting needs.</p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="/register" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                ✨ Create Account
+            </a>
+            <a href="/login" class="btn btn-secondary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                👋 Sign In
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Add some interactive animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const features = document.querySelectorAll('.feature');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }, index * 200);
+                }
+            });
+        });
+
+        features.forEach(feature => {
+            feature.style.opacity = '0';
+            feature.style.transform = 'translateY(30px)';
+            feature.style.transition = 'all 0.6s ease';
+            observer.observe(feature);
+        });
+    });
+</script>
+{% endblock %}

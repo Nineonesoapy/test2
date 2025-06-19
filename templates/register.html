@@ -1,7 +1,168 @@
-<h2>Register</h2>
-<form method="POST">
-  Username: <input type="text" name="username"><br>
-  Password: <input type="password" name="password"><br>
-  <button type="submit">Register</button>
-</form>
-<a href="/login">Already have an account?</a>
+{% extends "base.html" %}
+
+{% block title %}Register - Sriox Hosting{% endblock %}
+
+{% block content %}
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        padding: 2rem 0;
+    }
+
+    .auth-card {
+        width: 100%;
+        max-width: 400px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .auth-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .auth-header h2 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-body {
+        padding: 2rem;
+    }
+
+    .form-input {
+        position: relative;
+    }
+
+    .form-input input {
+        padding-left: 3rem;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 1.2rem;
+    }
+
+    .auth-footer {
+        text-align: center;
+        padding: 1rem 2rem 2rem;
+        color: #6b7280;
+    }
+
+    .auth-footer a {
+        color: #10b981;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+
+    .password-strength {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .strength-weak { color: #ef4444; }
+    .strength-medium { color: #f59e0b; }
+    .strength-strong { color: #10b981; }
+</style>
+
+<div class="auth-container fade-in">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">✨</div>
+            <h2>Create Account</h2>
+            <p style="opacity: 0.9;">Start hosting your websites today</p>
+        </div>
+
+        <form method="POST" class="auth-body" id="registerForm">
+            <div class="form-group">
+                <label for="username" class="form-label">Username</label>
+                <div class="form-input">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Choose a username" required minlength="3">
+                </div>
+                <small style="color: #6b7280;">At least 3 characters</small>
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <div class="form-input">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Create a password" required minlength="6">
+                </div>
+                <div class="password-strength" id="passwordStrength"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%);" id="submitBtn">
+                Create Account
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Already have an account? <a href="/login">Sign in here</a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Password strength indicator
+    document.getElementById('password').addEventListener('input', function() {
+        const password = this.value;
+        const strengthDiv = document.getElementById('passwordStrength');
+        
+        if (password.length === 0) {
+            strengthDiv.textContent = '';
+            return;
+        }
+        
+        let strength = 0;
+        if (password.length >= 6) strength++;
+        if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+        if (password.match(/\d/)) strength++;
+        if (password.match(/[^a-zA-Z\d]/)) strength++;
+        
+        if (strength < 2) {
+            strengthDiv.textContent = '⚠️ Weak password';
+            strengthDiv.className = 'password-strength strength-weak';
+        } else if (strength < 3) {
+            strengthDiv.textContent = '⚡ Medium strength';
+            strengthDiv.className = 'password-strength strength-medium';
+        } else {
+            strengthDiv.textContent = '✅ Strong password';
+            strengthDiv.className = 'password-strength strength-strong';
+        }
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerHTML = '<div class="loading"></div> Creating Account...';
+        submitBtn.disabled = true;
+    });
+
+    // Add input focus animations
+    document.querySelectorAll('.form-input input').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+            this.parentElement.style.transition = 'transform 0.2s ease';
+        });
+
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+    });
+</script>
+{% endblock %}

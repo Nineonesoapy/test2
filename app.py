@@ -16,8 +16,6 @@ ZONE_ID = "40ffe9b69c8309098982a5c5c4a5a16d"
 DOMAIN = "sriox.com"
 SERVER_IP = "103.180.237.199"
 
-# MySQL Connection
-
 def get_db():
     return mysql.connector.connect(
         host="localhost",
@@ -41,6 +39,7 @@ def init_db():
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT,
             subdomain VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
@@ -61,10 +60,10 @@ def register():
             cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)",
                         (request.form['username'], request.form['password']))
             conn.commit()
-            flash("Registered! Please login.")
+            flash("Account created successfully! Please login.", "success")
             return redirect('/login')
         except:
-            flash("Username already exists")
+            flash("Username already exists. Please choose another.", "error")
         finally:
             cur.close()
             conn.close()
@@ -84,12 +83,13 @@ def login():
             session['user_id'] = user[0]
             session['username'] = request.form['username']
             return redirect('/dashboard')
-        flash("Invalid login")
+        flash("Invalid username or password.", "error")
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
+    flash("You have been logged out successfully.", "success")
     return redirect('/')
 
 @app.route('/dashboard')
@@ -98,11 +98,11 @@ def dashboard():
         return redirect('/login')
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT subdomain FROM sites WHERE user_id=%s", (session['user_id'],))
+    cur.execute("SELECT subdomain, created_at FROM sites WHERE user_id=%s ORDER BY created_at DESC", (session['user_id'],))
     sites = cur.fetchall()
     cur.close()
     conn.close()
-    return render_template('dashboard.html', sites=sites)
+    return render_template('dashboard.html', sites=sites, username=session.get('username'))
 
 @app.route('/create-site', methods=['GET', 'POST'])
 def create_site():
@@ -111,21 +111,35 @@ def create_site():
     if request.method == 'POST':
         subdomain = request.form['subdomain'].strip().lower()
         file = request.files['file']
-        if not file.filename.endswith('.html'):
-            return "Only HTML files allowed"
+        
+        if not subdomain:
+            flash("Please enter a subdomain.", "error")
+            return render_template('create_site.html')
+            
+        if not file or not file.filename.endswith('.html'):
+            flash("Please upload a valid HTML file.", "error")
+            return render_template('create_site.html')
+
+        # Check if subdomain already exists
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM sites WHERE subdomain=%s", (subdomain,))
+        if cur.fetchone():
+            flash("Subdomain already exists. Please choose another.", "error")
+            cur.close()
+            conn.close()
+            return render_template('create_site.html')
 
         site_dir = os.path.join(UPLOAD_DIR, subdomain)
         os.makedirs(site_dir, exist_ok=True)
         file.save(os.path.join(site_dir, 'index.html'))
 
-        conn = get_db()
-        cur = conn.cursor()
         cur.execute("INSERT INTO sites (user_id, subdomain) VALUES (%s, %s)", (session['user_id'], subdomain))
         conn.commit()
         cur.close()
         conn.close()
 
-        # Cloudflare DNS
+        # Cloudflare DNS setup
         headers = {
             "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
             "Content-Type": "application/json"
@@ -137,49 +151,86 @@ def create_site():
             "ttl": 120,
             "proxied": False
         }
-        response = requests.post(f"https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/dns_records",
+        requests.post(f"https://api.cloudflare.com/client/v4/zones/{ZONE_ID}/dns_records",
                       headers=headers, json=data)
-        if response.status_code == 200:
-            flash("Site created successfully!")
-        else:
-            flash("Failed to create site. Please try again.")
 
         subprocess.Popen(['bash', 'setup_site.sh', subdomain])
-        return redirect('/dashboard')
-    return render_template('upload_site.html')
+        return render_template("loading.html", subdomain=subdomain)
+
+    return render_template('create_site.html')
 
 @app.route('/manage/<subdomain>')
 def manage_site(subdomain):
     if 'user_id' not in session:
         return redirect('/login')
+    
+    # Verify user owns this site
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM sites WHERE subdomain=%s AND user_id=%s", (subdomain, session['user_id']))
+    if not cur.fetchone():
+        flash("Site not found or access denied.", "error")
+        cur.close()
+        conn.close()
+        return redirect('/dashboard')
+    cur.close()
+    conn.close()
+    
     site_path = os.path.join(UPLOAD_DIR, subdomain)
-    files = os.listdir(site_path) if os.path.exists(site_path) else []
+    files = []
+    if os.path.exists(site_path):
+        for f in os.listdir(site_path):
+            if os.path.isfile(os.path.join(site_path, f)):
+                stat = os.stat(os.path.join(site_path, f))
+                files.append({
+                    'name': f,
+                    'size': stat.st_size,
+                    'modified': stat.st_mtime
+                })
     return render_template('manage.html', subdomain=subdomain, files=files)
 
 @app.route('/manage/<subdomain>/edit/<filename>', methods=['GET', 'POST'])
 def edit_file(subdomain, filename):
+    if 'user_id' not in session:
+        return redirect('/login')
+        
     path = os.path.join(UPLOAD_DIR, subdomain, filename)
+    if not os.path.exists(path):
+        flash("File not found.", "error")
+        return redirect(url_for('manage_site', subdomain=subdomain))
+        
     if request.method == 'POST':
         with open(path, 'w') as f:
             f.write(request.form['content'])
+        flash("File saved successfully!", "success")
         return redirect(url_for('manage_site', subdomain=subdomain))
+        
     with open(path, 'r') as f:
         content = f.read()
     return render_template('edit_file.html', filename=filename, content=content, subdomain=subdomain)
 
 @app.route('/manage/<subdomain>/delete/<filename>')
 def delete_file(subdomain, filename):
+    if 'user_id' not in session:
+        return redirect('/login')
+        
     path = os.path.join(UPLOAD_DIR, subdomain, filename)
     if os.path.exists(path):
         os.remove(path)
+        flash("File deleted successfully!", "success")
     return redirect(url_for('manage_site', subdomain=subdomain))
 
 @app.route('/manage/<subdomain>/upload', methods=['GET', 'POST'])
 def upload_file(subdomain):
+    if 'user_id' not in session:
+        return redirect('/login')
+        
     if request.method == 'POST':
         file = request.files['file']
-        if file:
-            file.save(os.path.join(UPLOAD_DIR, subdomain, secure_filename(file.filename)))
+        if file and file.filename:
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(UPLOAD_DIR, subdomain, filename))
+            flash("File uploaded successfully!", "success")
         return redirect(url_for('manage_site', subdomain=subdomain))
     return render_template('upload_file.html', subdomain=subdomain)
 

@@ -1,6 +1,355 @@
-<h2>Upload File to {{ subdomain }}.sriox.com</h2>
-<form method="POST" enctype="multipart/form-data">
-  File: <input type="file" name="file"><br>
-  <button type="submit">Upload</button>
-</form>
-<p><a href="/manage/{{ subdomain }}">Back to Files</a></p>
+{% extends "base.html" %}
+
+{% block title %}Upload Files - {{ subdomain }}.sriox.com{% endblock %}
+
+{% block content %}
+<style>
+    .upload-container {
+        max-width: 600px;
+        margin: 2rem auto;
+    }
+
+    .upload-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .upload-header h1 {
+        font-size: 2.5rem;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .site-badge {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+
+    .upload-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .upload-area {
+        border: 3px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 4rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin: 2rem;
+        position: relative;
+    }
+
+    .upload-area:hover {
+        border-color: #3b82f6;
+        background: #f8fafc;
+        transform: scale(1.02);
+    }
+
+    .upload-area.dragover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .upload-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: #9ca3af;
+        transition: all 0.3s ease;
+    }
+
+    .upload-area:hover .upload-icon {
+        color: #3b82f6;
+        transform: scale(1.1);
+    }
+
+    .file-selected {
+        border-color: #22c55e;
+        background: #f0fdf4;
+    }
+
+    .file-selected .upload-icon {
+        color: #22c55e;
+    }
+
+    .file-list {
+        padding: 0 2rem 2rem;
+    }
+
+    .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .file-type-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        background: #e5e7eb;
+        color: #6b7280;
+    }
+
+    .upload-footer {
+        background: #f8fafc;
+        padding: 2rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 1rem 0;
+        display: none;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #22c55e, #16a34a);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+</style>
+
+<div class="upload-container fade-in">
+    <div class="upload-header">
+        <h1>📤 Upload Files</h1>
+        <div class="site-badge">🌐 {{ subdomain }}.sriox.com</div>
+        <p style="color: #6b7280; font-size: 1.1rem;">Add more files to your website</p>
+    </div>
+
+    <div class="upload-card">
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon" id="uploadIcon">📁</div>
+                <h3 style="margin-bottom: 0.5rem; color: #374151;" id="uploadTitle">Drop files here to upload</h3>
+                <p style="color: #6b7280; margin-bottom: 1rem;" id="uploadDesc">or click to browse your computer</p>
+                <input type="file" name="file" multiple id="fileInput" style="display: none;">
+                <div class="btn btn-primary" style="display: inline-flex;">
+                    📂 Choose Files
+                </div>
+                <p style="color: #9ca3af; font-size: 0.875rem; margin-top: 1rem;">
+                    Supported: HTML, CSS, JS, Images, and more
+                </p>
+            </div>
+
+            <div class="file-list" id="fileList" style="display: none;">
+                <h4 style="color: #374151; margin-bottom: 1rem;">📋 Files to Upload:</h4>
+                <div id="selectedFiles"></div>
+            </div>
+
+            <div class="upload-footer">
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div style="color: #6b7280; font-size: 0.875rem;" id="uploadStatus">
+                        Ready to upload files
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <a href="/manage/{{ subdomain }}" class="btn btn-secondary">
+                            ← Back to Files
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
+                            🚀 Upload Files
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const selectedFiles = document.getElementById('selectedFiles');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadStatus = document.getElementById('uploadStatus');
+    let filesToUpload = [];
+
+    // File upload area interactions
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+        filesToUpload = Array.from(files);
+        displaySelectedFiles();
+        updateUploadArea();
+        uploadBtn.disabled = filesToUpload.length === 0;
+    }
+
+    function displaySelectedFiles() {
+        if (filesToUpload.length === 0) {
+            fileList.style.display = 'none';
+            return;
+        }
+
+        fileList.style.display = 'block';
+        selectedFiles.innerHTML = '';
+
+        filesToUpload.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            
+            const fileType = getFileType(file.name);
+            const fileIcon = getFileIcon(fileType);
+            
+            fileItem.innerHTML = `
+                <div class="file-info">
+                    <div class="file-type-icon" style="background: ${fileIcon.bg}; color: ${fileIcon.color};">
+                        ${fileIcon.icon}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; color: #374151;">${file.name}</div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">
+                            ${(file.size / 1024).toFixed(1)} KB • ${fileType}
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="removeFile(${index})" style="padding: 0.5rem;">
+                    ❌
+                </button>
+            `;
+            
+            selectedFiles.appendChild(fileItem);
+        });
+
+        uploadStatus.textContent = `${filesToUpload.length} file${filesToUpload.length !== 1 ? 's' : ''} selected`;
+    }
+
+    function updateUploadArea() {
+        if (filesToUpload.length > 0) {
+            document.getElementById('uploadIcon').textContent = '✅';
+            document.getElementById('uploadTitle').textContent = `${filesToUpload.length} file${filesToUpload.length !== 1 ? 's' : ''} selected`;
+            document.getElementById('uploadDesc').textContent = 'Click to add more files or drag and drop';
+            uploadArea.classList.add('file-selected');
+        } else {
+            document.getElementById('uploadIcon').textContent = '📁';
+            document.getElementById('uploadTitle').textContent = 'Drop files here to upload';
+            document.getElementById('uploadDesc').textContent = 'or click to browse your computer';
+            uploadArea.classList.remove('file-selected');
+        }
+    }
+
+    function removeFile(index) {
+        filesToUpload.splice(index, 1);
+        displaySelectedFiles();
+        updateUploadArea();
+        uploadBtn.disabled = filesToUpload.length === 0;
+        
+        // Update file input
+        const dt = new DataTransfer();
+        filesToUpload.forEach(file => dt.items.add(file));
+        fileInput.files = dt.files;
+    }
+
+    function getFileType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const types = {
+            'html': 'HTML',
+            'css': 'CSS',
+            'js': 'JavaScript',
+            'png': 'Image',
+            'jpg': 'Image',
+            'jpeg': 'Image',
+            'gif': 'Image',
+            'svg': 'Image',
+            'txt': 'Text',
+            'md': 'Markdown'
+        };
+        return types[ext] || 'File';
+    }
+
+    function getFileIcon(type) {
+        const icons = {
+            'HTML': { icon: '🌐', bg: '#fef3c7', color: '#92400e' },
+            'CSS': { icon: '🎨', bg: '#dbeafe', color: '#1e40af' },
+            'JavaScript': { icon: '⚡', bg: '#fef2f2', color: '#991b1b' },
+            'Image': { icon: '🖼️', bg: '#f0fdf4', color: '#166534' },
+            'Text': { icon: '📝', bg: '#f3f4f6', color: '#6b7280' },
+            'Markdown': { icon: '📄', bg: '#faf5ff', color: '#7c3aed' }
+        };
+        return icons[type] || { icon: '📄', bg: '#f3f4f6', color: '#6b7280' };
+    }
+
+    // Form submission with progress
+    uploadForm.addEventListener('submit', function(e) {
+        if (filesToUpload.length === 0) {
+            e.preventDefault();
+            return;
+        }
+
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        
+        uploadBtn.innerHTML = '🚀 Uploading...';
+        uploadBtn.disabled = true;
+        progressBar.style.display = 'block';
+        uploadStatus.textContent = 'Uploading files...';
+        
+        // Simulate upload progress
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 20;
+            if (progress > 90) progress = 90;
+            progressFill.style.width = progress + '%';
+        }, 300);
+        
+        // Complete progress after form submission
+        setTimeout(() => {
+            clearInterval(interval);
+            progressFill.style.width = '100%';
+        }, 1500);
+    });
+</script>
+{% endblock %}

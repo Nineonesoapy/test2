@@ -1,6 +1,389 @@
-<h2>Editing {{ filename }}</h2>
-<form method="POST">
-  <textarea name="content" rows="20" cols="80">{{ content }}</textarea><br>
-  <button type="submit">Save</button>
-</form>
-<p><a href="/manage/{{ subdomain }}">Cancel</a></p>
+{% extends "base.html" %}
+
+{% block title %}Edit {{ filename }} - Sriox Hosting{% endblock %}
+
+{% block content %}
+<style>
+    .editor-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .file-info h1 {
+        font-size: 2rem;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .file-type {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .editor-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .editor-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .editor-toolbar {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .editor-tools {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .tool-btn {
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+    }
+
+    .tool-btn:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+    }
+
+    .editor-textarea {
+        width: 100%;
+        min-height: 500px;
+        padding: 1.5rem;
+        border: none;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        resize: vertical;
+        background: #fafafa;
+    }
+
+    .editor-textarea:focus {
+        outline: none;
+        background: white;
+    }
+
+    .editor-footer {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .save-status {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .save-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .line-numbers {
+        background: #f3f4f6;
+        color: #9ca3af;
+        padding: 1.5rem 1rem;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        text-align: right;
+        user-select: none;
+        border-right: 1px solid #e5e7eb;
+        min-width: 60px;
+    }
+
+    .editor-content {
+        display: flex;
+    }
+
+    @media (max-width: 768px) {
+        .editor-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .editor-actions {
+            justify-content: center;
+        }
+
+        .editor-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .editor-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .line-numbers {
+            display: none;
+        }
+    }
+</style>
+
+<div class="editor-container fade-in">
+    <div class="editor-header">
+        <div class="file-info">
+            <div style="font-size: 2.5rem;">✏️</div>
+            <div>
+                <h1>{{ filename }}</h1>
+                <div class="file-type">🌐 HTML File</div>
+            </div>
+        </div>
+
+        <div class="editor-actions">
+            <a href="http://{{ subdomain }}.sriox.com" target="_blank" class="btn btn-primary">
+                🔗 Preview Site
+            </a>
+            <a href="/manage/{{ subdomain }}" class="btn btn-secondary">
+                ← Back to Files
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" id="editorForm">
+        <div class="editor-card">
+            <div class="editor-toolbar">
+                <div class="editor-tools">
+                    <button type="button" class="tool-btn" onclick="insertText('<h1>', '</h1>')" title="Heading 1">
+                        H1
+                    </button>
+                    <button type="button" class="tool-btn" onclick="insertText('<p>', '</p>')" title="Paragraph">
+                        P
+                    </button>
+                    <button type="button" class="tool-btn" onclick="insertText('<a href=&quot;&quot;>', '</a>')" title="Link">
+                        🔗
+                    </button>
+                    <button type="button" class="tool-btn" onclick="insertText('<img src=&quot;&quot; alt=&quot;&quot;>', '')" title="Image">
+                        🖼️
+                    </button>
+                    <button type="button" class="tool-btn" onclick="insertText('<div>', '</div>')" title="Div">
+                        DIV
+                    </button>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <span style="color: #6b7280; font-size: 0.875rem;" id="charCount">0 characters</span>
+                    <button type="button" class="tool-btn" onclick="formatCode()" title="Format Code">
+                        🎨 Format
+                    </button>
+                </div>
+            </div>
+
+            <div class="editor-content">
+                <div class="line-numbers" id="lineNumbers">1</div>
+                <textarea name="content" class="editor-textarea" id="codeEditor" placeholder="Enter your HTML code here...">{{ content }}</textarea>
+            </div>
+
+            <div class="editor-footer">
+                <div class="save-status" id="saveStatus">
+                    💾 Ready to save
+                </div>
+                
+                <div class="save-actions">
+                    <button type="button" class="btn btn-secondary" onclick="resetContent()">
+                        🔄 Reset
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">
+                        💾 Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const codeEditor = document.getElementById('codeEditor');
+    const lineNumbers = document.getElementById('lineNumbers');
+    const charCount = document.getElementById('charCount');
+    const saveStatus = document.getElementById('saveStatus');
+    const originalContent = codeEditor.value;
+    let hasChanges = false;
+
+    // Update line numbers
+    function updateLineNumbers() {
+        const lines = codeEditor.value.split('\n').length;
+        const numbers = [];
+        for (let i = 1; i <= lines; i++) {
+            numbers.push(i);
+        }
+        lineNumbers.textContent = numbers.join('\n');
+    }
+
+    // Update character count
+    function updateCharCount() {
+        const count = codeEditor.value.length;
+        charCount.textContent = count.toLocaleString() + ' characters';
+    }
+
+    // Check for changes
+    function checkChanges() {
+        hasChanges = codeEditor.value !== originalContent;
+        if (hasChanges) {
+            saveStatus.textContent = '⚠️ Unsaved changes';
+            saveStatus.style.color = '#f59e0b';
+        } else {
+            saveStatus.textContent = '💾 No changes';
+            saveStatus.style.color = '#6b7280';
+        }
+    }
+
+    // Insert text at cursor position
+    function insertText(startTag, endTag) {
+        const start = codeEditor.selectionStart;
+        const end = codeEditor.selectionEnd;
+        const selectedText = codeEditor.value.substring(start, end);
+        const replacement = startTag + selectedText + endTag;
+        
+        codeEditor.value = codeEditor.value.substring(0, start) + replacement + codeEditor.value.substring(end);
+        codeEditor.focus();
+        codeEditor.setSelectionRange(start + startTag.length, start + startTag.length + selectedText.length);
+        
+        updateLineNumbers();
+        updateCharCount();
+        checkChanges();
+    }
+
+    // Basic code formatting
+    function formatCode() {
+        let code = codeEditor.value;
+        // Simple HTML formatting (basic indentation)
+        code = code.replace(/></g, '>\n<');
+        code = code.replace(/^\s+|\s+$/gm, ''); // Trim lines
+        
+        const lines = code.split('\n');
+        let indentLevel = 0;
+        const formatted = [];
+        
+        lines.forEach(line => {
+            if (line.trim()) {
+                if (line.includes('</') && !line.includes('</'+ line.split('</')[1].split('>')[0] + '>')) {
+                    indentLevel = Math.max(0, indentLevel - 1);
+                }
+                formatted.push('  '.repeat(indentLevel) + line.trim());
+                if (line.includes('<') && !line.includes('</') && !line.includes('/>')) {
+                    indentLevel++;
+                }
+            }
+        });
+        
+        codeEditor.value = formatted.join('\n');
+        updateLineNumbers();
+        updateCharCount();
+        checkChanges();
+    }
+
+    // Reset content
+    function resetContent() {
+        if (hasChanges && !confirm('Are you sure you want to reset? All unsaved changes will be lost.')) {
+            return;
+        }
+        codeEditor.value = originalContent;
+        updateLineNumbers();
+        updateCharCount();
+        checkChanges();
+    }
+
+    // Event listeners
+    codeEditor.addEventListener('input', function() {
+        updateLineNumbers();
+        updateCharCount();
+        checkChanges();
+    });
+
+    codeEditor.addEventListener('scroll', function() {
+        lineNumbers.scrollTop = codeEditor.scrollTop;
+    });
+
+    // Form submission
+    document.getElementById('editorForm').addEventListener('submit', function(e) {
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.innerHTML = '💾 Saving...';
+        saveBtn.disabled = true;
+        saveStatus.textContent = '💾 Saving changes...';
+        saveStatus.style.color = '#3b82f6';
+    });
+
+    // Keyboard shortcuts
+    codeEditor.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case 's':
+                    e.preventDefault();
+                    document.getElementById('editorForm').submit();
+                    break;
+                case 'z':
+                    if (e.shiftKey) {
+                        // Redo (Ctrl+Shift+Z)
+                        e.preventDefault();
+                    }
+                    break;
+            }
+        }
+        
+        // Tab key for indentation
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            insertText('  ', '');
+        }
+    });
+
+    // Warn before leaving with unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (hasChanges) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // Initialize
+    updateLineNumbers();
+    updateCharCount();
+    checkChanges();
+</script>
+{% endblock %}

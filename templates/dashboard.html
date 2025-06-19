@@ -1,10 +1,258 @@
-<h2>Your Sites</h2>
-<ul>
-{% for site in sites %}
-  <li><a href="http://{{ site[0] }}.sriox.com" target="_blank">{{ site[0] }}.sriox.com</a>
-    [<a href="/manage/{{ site[0] }}">Manage</a>]
-  </li>
-{% endfor %}
-</ul>
-<p><a href="/create-site">Create New Site</a></p>
-<p><a href="/logout">Logout</a></p>
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sriox Hosting{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .dashboard-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .dashboard-title h1 {
+        font-size: 2.5rem;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .user-info {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+    }
+
+    .dashboard-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        position: relative;
+        min-width: 250px;
+    }
+
+    .search-box input {
+        padding-left: 3rem;
+        border-radius: 50px;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
+
+    .sites-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .site-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+
+    .site-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+        border-color: #3b82f6;
+    }
+
+    .site-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .site-url {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1f2937;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .site-url:hover {
+        color: #3b82f6;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-active {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-setting-up {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .site-meta {
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+
+    .site-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6b7280;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .dashboard-actions {
+            justify-content: center;
+        }
+
+        .search-box {
+            min-width: auto;
+            width: 100%;
+        }
+
+        .sites-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="fade-in">
+    <div class="dashboard-header">
+        <div class="dashboard-title">
+            <div style="font-size: 3rem;">🌐</div>
+            <div>
+                <h1>Your Websites</h1>
+                <div class="user-info">👋 Welcome, {{ username }}!</div>
+            </div>
+        </div>
+
+        <div class="dashboard-actions">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="form-input" placeholder="Search your websites..." id="searchInput">
+            </div>
+            <a href="/create-site" class="btn btn-primary">
+                ➕ Create New Site
+            </a>
+            <a href="/logout" class="btn btn-secondary">
+                🚪 Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="sites-grid" id="sitesGrid">
+        {% if sites %}
+            {% for site in sites %}
+            <div class="site-card" data-subdomain="{{ site[0] }}">
+                <div class="site-header">
+                    <a href="http://{{ site[0] }}.sriox.com" target="_blank" class="site-url">
+                        🌍 {{ site[0] }}.sriox.com
+                    </a>
+                    <span class="status-badge status-active">✅ Live</span>
+                </div>
+                
+                <div class="site-meta">
+                    📅 Created: {{ site[1].strftime('%B %d, %Y') if site[1] else 'Unknown' }}
+                </div>
+
+                <div class="site-actions">
+                    <a href="http://{{ site[0] }}.sriox.com" target="_blank" class="btn btn-primary" style="flex: 1; justify-content: center;">
+                        🔗 Visit Site
+                    </a>
+                    <a href="/manage/{{ site[0] }}" class="btn btn-secondary" style="flex: 1; justify-content: center;">
+                        ⚙️ Manage
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon">🌐</div>
+                <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: #374151;">No websites yet</h3>
+                <p style="margin-bottom: 2rem;">Create your first website to get started with Sriox Hosting</p>
+                <a href="/create-site" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                    🚀 Create Your First Site
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const siteCards = document.querySelectorAll('.site-card');
+        
+        siteCards.forEach(card => {
+            const subdomain = card.dataset.subdomain.toLowerCase();
+            if (subdomain.includes(searchTerm)) {
+                card.style.display = 'block';
+                card.style.animation = 'fadeIn 0.3s ease';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+
+    // Add staggered animation to site cards
+    document.addEventListener('DOMContentLoaded', function() {
+        const siteCards = document.querySelectorAll('.site-card');
+        siteCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}
